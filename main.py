@@ -1,36 +1,24 @@
-from fastapi import FastAPI
-import requests
+# main.py
 
-from fullCalendar import fetch_calendar_structure
-from timeIrApi import get_month_events_and_holidays
+from fastapi import FastAPI, HTTPException
+from calendar_utils import fetch_calendar_data
 
-app = FastAPI()
-
-
-def get_month_holidays_unofficial(year, month):
-    holidays = []
-    for day in range(1, 32):
-        try:
-            url = f"https://holidayapi.ir/jalali/{year}/{month:02}/{day:02}"
-            response = requests.get(url)
-            if response.status_code == 200:
-                data = response.json()
-                if data.get("is_holiday") or data.get("event"):
-                    holidays.append(data)
-        except Exception as e:
-            pass  # skip not valid day
-    return holidays
+app = FastAPI(
+    title="Persian Calendar API",
+    description="نمایش اطلاعات تقویم شمسی با مناسبت‌ها و تعطیلات",
+    version="1.0"
+)
 
 
-@app.get('/calendar/{year}/{month}')
-def index(year: int, month: int):
-    data = get_month_events_and_holidays(year, month)
-    full = fetch_calendar_structure(year, month)
+@app.get("/calendar/{year}/{month}")
+def get_calendar(year: int, month: int):
+    if year < 1300 or year > 1500:
+        raise HTTPException(status_code=400, detail="سال معتبر نیست.")
+    if month < 1 or month > 12:
+        raise HTTPException(status_code=400, detail="ماه باید بین ۱ تا ۱۲ باشد.")
 
-    result = {
-        "data": data,
-        "full": full,
-        "year": year,
-        "month": month,
-    }
-    return result
+    try:
+        data = fetch_calendar_data(year, month)
+        return data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
