@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 import requests
 
+from fullCalendar import fetch_calendar_structure
 from timeIrApi import get_month_events_and_holidays
 
 app = FastAPI()
@@ -24,9 +25,11 @@ def get_month_holidays_unofficial(year, month):
 @app.get('/calendar/{year}/{month}')
 def index(year: int, month: int):
     data = get_month_events_and_holidays(year, month)
+    full = fetch_calendar_structure(year, month)
 
     result = {
         "data": data,
+        "full": full,
         "year": year,
         "month": month,
     }
